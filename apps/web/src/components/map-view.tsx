@@ -9,7 +9,7 @@
 
 import dynamic from "next/dynamic";
 import type { TacticalAsset, AssetClass } from "@/lib/tactical-mock";
-import type { MapStyleId } from "./map-view-inner";
+import type { MapStyleId, DetectionTarget } from "./map-view-inner";
 
 export interface MapViewProps {
   assets: TacticalAsset[];
@@ -31,6 +31,8 @@ export interface MapViewProps {
     to: [number, number];
   } | null;
   onMovePathDrag?: (lngLat: { lng: number; lat: number }) => void;
+  activeBoardState?: DetectionTarget[];
+  flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
 const MapViewInner = dynamic(

@@ -1,0 +1,44 @@
+<h2>Feature C — SIGINT / Comms Intelligence Feed</h2>
+<p class="subtitle">Question 1 of ~4: Where does the SIGINT data come from?</p>
+
+<p style="margin-bottom:16px; color: var(--text-secondary); font-size: 13px;">
+  The current simulation has no comms intercept data. The <code>comms_intelligence</code> Kafka topic is referenced in the project spec but the sim engine doesn't generate any SIGINT events yet. Before we design the UI, we need to decide where the data comes from.
+</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Extend the simulation engine</h3>
+      <p>Add <code>SigintIntercept</code> events to the sim. Assets with radios periodically emit comms; enemy EW assets (the <em>EW Radar Vehicle</em> already in the scenario) detect and intercept them. Intercepts flow through the existing WebSocket <code>diff</code> payload as a new <code>sigint_intercepts</code> field — same pattern as <code>detections</code> and <code>mission_updates</code>.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Intercepts tied to real asset positions</li><li>EW asset has a meaningful role</li><li>No new infrastructure</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More backend work (sim engine changes)</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Standalone synthetic generator</h3>
+      <p>A lightweight background task in the API generates plausible intercept events on a timer, independent of the sim tick loop. They flow through the existing WebSocket but aren't correlated with asset positions or EW logic.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Fast to implement</li><li>No sim engine changes</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Fake data, no sim correlation</li><li>EW asset remains decorative</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Kafka-native (as originally specced)</h3>
+      <p>The API consumes the <code>comms_intelligence</code> Kafka topic and forwards messages over the WebSocket. Matches the project's Layer 1 / Layer 2 architecture in <code>CLAUDE.md</code>. Keeps the data pipeline architecturally honest.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>True to original architecture</li><li>Real pipeline integrity</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Requires Kafka running + wired</li><li>Most infrastructure work</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -17,6 +17,28 @@ import ms from "milsymbol";
 import type { TacticalAsset, AssetClass } from "@/lib/tactical-mock";
 import { getSidc } from "@/lib/sidc-map";
 
+export interface DetectionRecord {
+  detection_id: string;
+  timestamp: string;
+  asset_id: string;
+  asset_type: string;
+  confidence: number;
+  grid_ref: string;
+  lat: number;
+  lon: number;
+  source_label: string;
+  classification: string;
+}
+
+export interface DetectionTarget {
+  target_id: string;
+  stage: "DYNAMIC" | "PENDING_PAIRING" | "PAIRED" | "IN_EXECUTION" | "COMPLETE";
+  created_at: string;
+  updated_at: string;
+  history?: Array<[string, string]>;
+  detection: DetectionRecord;
+}
+
 // ── Map styles ───────────────────────────────────────────────────────────────
 
 const DARK_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -80,6 +102,8 @@ interface TacticalMapProps {
   } | null;
   /** Called when the destination endpoint is dragged to a new position. */
   onMovePathDrag?: (lngLat: { lng: number; lat: number }) => void;
+  activeBoardState?: DetectionTarget[];
+  flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -95,6 +119,8 @@ export function MapViewInner({
   onMapClick,
   movePath,
   onMovePathDrag,
+  activeBoardState,
+  flyTo,
 }: TacticalMapProps) {
   const containerRef        = useRef<HTMLDivElement>(null);
   const mapRef              = useRef<maplibregl.Map | null>(null);
@@ -108,6 +134,10 @@ export function MapViewInner({
   const onMovePathDragRef     = useRef(onMovePathDrag);
   onMovePathDragRef.current   = onMovePathDrag;
   const destMarkerRef         = useRef<maplibregl.Marker | null>(null);
+  // Tracks whether the map has genuinely fired its "load" event.
+  // map.loaded() is not a reliable guard — it can return true before
+  // transform.projection is initialised, causing the "projection" crash.
+  const mapLoadedRef          = useRef(false);
 
   const resolvedStyle = MAP_STYLES.find((s) => s.id === mapStyle)?.style ?? DARK_STYLE;
 
@@ -123,6 +153,10 @@ export function MapViewInner({
       attributionControl: {},
       maxZoom: 16,
     });
+
+    // Set the flag only after the load event fires — this is the single
+    // reliable signal that transform.projection is fully initialised.
+    map.once("load", () => { mapLoadedRef.current = true; });
 
     mapRef.current = map;
 
@@ -145,6 +179,7 @@ export function MapViewInner({
     return () => {
       map.remove();
       mapRef.current = null;
+      mapLoadedRef.current = false;
       markersRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,6 +192,101 @@ export function MapViewInner({
     map.setStyle(resolvedStyle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapStyle]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!map || !(map as any).transform || !(map as any).transform.projection) return;
+
+    const SOURCE_ID = "detection-overlay-source";
+    const LAYER_ID = "detection-overlay-layer";
+
+    const updateOverlay = () => {
+      if (!map || !mapRef.current) return;
+
+      if (!activeBoardState || activeBoardState.length === 0) {
+        try {
+          if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
+          if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+        } catch {
+          // style already unloaded
+        }
+        return;
+      }
+
+      const geojson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: activeBoardState.map((target) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [target.detection.lon, target.detection.lat],
+          },
+          properties: {
+            target_id: target.target_id,
+            stage: target.stage,
+            label: target.detection.asset_type,
+          },
+        })),
+      };
+
+      const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+      if (source) {
+        source.setData(geojson);
+      } else {
+        map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
+        map.addLayer({
+          id: LAYER_ID,
+          type: "circle",
+          source: SOURCE_ID,
+          paint: {
+            "circle-color": "#ff4d4f",
+            "circle-radius": 10,
+            "circle-opacity": 0.8,
+            "circle-stroke-color": "rgba(255,255,255,0.9)",
+            "circle-stroke-width": 2,
+          },
+        });
+      }
+    };
+
+    if (map.loaded() && map.isStyleLoaded()) {
+      updateOverlay();
+    } else {
+      map.once("styledata", updateOverlay);
+    }
+
+    return () => {
+      if (!map) return;
+      try {
+        if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
+        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+      } catch {
+        // map already removed or style changed
+      }
+    };
+  }, [activeBoardState, mapStyle]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyTo) return;
+
+    const doFly = () => {
+      if (!map || !flyTo) return;
+      map.flyTo({
+        center: [flyTo.lng, flyTo.lat],
+        zoom: flyTo.zoom ?? 8,
+        speed: 0.8,
+        curve: 1.4,
+      });
+    };
+
+    if (map.loaded() && map.isStyleLoaded()) {
+      doFly();
+    } else {
+      map.once("styledata", doFly);
+    }
+  }, [flyTo?.lat, flyTo?.lng, flyTo?.zoom, mapStyle]);
 
   // ── Sync markers — add/remove/update without full rebuild ──────────────────
   useEffect(() => {
@@ -216,45 +346,62 @@ export function MapViewInner({
           inner.style.filter    = "";
         });
 
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([asset.longitude, asset.latitude])
-          .addTo(map!);
+        // Hard guard: transform.projection must exist before addTo() calls
+        // map.project() internally. The load event does not guarantee this.
+        if (!(map as any).transform?.projection) {
+          console.warn(`[MapView] Skipping marker ${asset.asset_id}: map.transform.projection not ready`);
+          continue;
+        }
 
-        const assetId = asset.asset_id;
-        el.addEventListener("click", () => {
-          const entry = markersRef.current.get(assetId);
-          if (entry) onAssetClickRef.current?.(entry.asset);
-        });
-
-        el.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const entry = markersRef.current.get(assetId);
-          if (entry) {
-            const rect = containerRef.current?.getBoundingClientRect();
-            const x = e.clientX - (rect?.left ?? 0);
-            const y = e.clientY - (rect?.top ?? 0);
-            onContextMenuRef.current?.({
-              type: "asset",
-              asset: {
-                asset_id: entry.asset.asset_id,
-                callsign: entry.asset.callsign,
-                weapons: entry.asset.weapons ?? [],
-              },
-              x,
-              y,
-            });
+        try {
+          const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([asset.longitude, asset.latitude]);
+          if (map && (map as any).transform?.projection) {
+            marker.addTo(map);
+          } else {
+            console.warn("Map projection not ready, skipping marker draw.");
           }
-        });
 
-        markersRef.current.set(asset.asset_id, { marker, asset });
+          const assetId = asset.asset_id;
+          el.addEventListener("click", () => {
+            const entry = markersRef.current.get(assetId);
+            if (entry) onAssetClickRef.current?.(entry.asset);
+          });
+
+          el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const entry = markersRef.current.get(assetId);
+            if (entry) {
+              const rect = containerRef.current?.getBoundingClientRect();
+              const x = e.clientX - (rect?.left ?? 0);
+              const y = e.clientY - (rect?.top ?? 0);
+              onContextMenuRef.current?.({
+                type: "asset",
+                asset: {
+                  asset_id: entry.asset.asset_id,
+                  callsign: entry.asset.callsign,
+                  weapons: entry.asset.weapons ?? [],
+                },
+                x,
+                y,
+              });
+            }
+          });
+
+          markersRef.current.set(asset.asset_id, { marker, asset });
+        } catch (err) {
+          console.warn(`[MapView] Failed to add marker for ${asset.asset_id}:`, err);
+        }
       }
     }
 
-    if (map.loaded()) {
+    // "load" alone is insufficient — transform.projection may not be set yet.
+    // "idle" fires after the first full render, guaranteeing all state is ready.
+    if (mapLoadedRef.current && (map as any).transform?.projection) {
       syncMarkers();
     } else {
-      map.once("load", syncMarkers);
+      map.once("idle", syncMarkers);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets, visibleLayers]);
@@ -342,8 +489,11 @@ export function MapViewInner({
           "width:14px;height:14px;border:2px solid #2D72D2;border-radius:50%;" +
           "background:rgba(45,114,210,0.2);cursor:grab;box-shadow:0 0 6px rgba(45,114,210,0.5);";
         const marker = new maplibregl.Marker({ element: el, draggable: true })
-          .setLngLat(movePath.to)
-          .addTo(map);
+          .setLngLat(movePath.to);
+
+        if ((map as any).transform?.projection) {
+          marker.addTo(map);
+        }
 
         marker.on("dragend", () => {
           const lngLat = marker.getLngLat();

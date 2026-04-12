@@ -17,6 +17,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { MapView } from "@/components/map-view";
 import { MAP_STYLES, type MapStyleId } from "@/components/map-view-inner";
 import { SimulationControls } from "@/components/simulation-controls";
@@ -37,6 +38,20 @@ export default function MapPage() {
   const [commandedMoves, setCommandedMoves] = useState<Map<string, { lng: number; lat: number }>>(new Map());
 
   const sim = useSimulation();
+  const searchParams = useSearchParams();
+  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+
+  useEffect(() => {
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng") ?? searchParams.get("lon");
+    if (!lat || !lng) return;
+
+    const parsedLat = Number(lat);
+    const parsedLng = Number(lng);
+    if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng)) {
+      setFlyTo({ lat: parsedLat, lng: parsedLng, zoom: 9 });
+    }
+  }, [searchParams]);
 
   // Keep the context's selected asset fresh with latest sim data
   const selectedId = selectedAsset?.asset_id ?? null;
@@ -197,6 +212,8 @@ export default function MapPage() {
         <MapView
           assets={visibleAssets}
           visibleLayers={visibleLayers}
+          activeBoardState={sim.boardState}
+          flyTo={flyTo}
           onAssetClick={(tacticalAsset) => {
             if (moveMode) return; // ignore clicks during move mode
             const simAsset = sim.assets[tacticalAsset.asset_id];

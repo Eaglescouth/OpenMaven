@@ -1,0 +1,62 @@
+<h2>Where should we focus UI/UX improvements?</h2>
+<p class="subtitle">Pick the area(s) that would have the most impact — you can select multiple</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="map" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Map &amp; Tactical Overlays</h3>
+      <p>Improvements to the main map view — mini-map, event feed/timeline, threat heat maps, fog-of-war visualization, zone control indicators, better strike arc rendering</p>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">mini-map</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">timeline feed</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">threat heatmap</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">zone control</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="hud" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>HUD &amp; Situational Awareness</h3>
+      <p>Real-time force balance meters, faction health bars, kill/loss counters, alerts &amp; toast notifications for key events (asset destroyed, mission launched, counterattack detected)</p>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">force balance</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">event alerts</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">kill counter</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">threat level</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="assets" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Asset Management</h3>
+      <p>Better asset list with health bars, ammo/weapon loadout indicators, status badges (patrol, engaging, destroyed), quick-filter by faction/class, bulk command mode</p>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">health bars</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">weapon loadout</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">status badges</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">bulk ops</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="mission" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Mission Planning &amp; Orders</h3>
+      <p>Visual mission builder on the map — drag-to-assign strike targets, route planning for movement orders, multi-target sequencing, ROE (rules of engagement) quick-set panel</p>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">drag-to-assign</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">route planner</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">multi-target</span>
+        <span style="font-size:10px;padding:2px 6px;background:rgba(74,144,226,0.12);border:1px solid rgba(74,144,226,0.25);border-radius:3px;color:#7ab8f5">ROE panel</span>
+      </div>
+    </div>
+  </div>
+
+</div>

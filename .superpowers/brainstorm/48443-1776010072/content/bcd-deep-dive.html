@@ -1,0 +1,62 @@
+<h2>Deep Dive: Options B, C &amp; D</h2>
+<p class="subtitle">Select the one(s) you want to build. Multi-select enabled.</p>
+
+<div style="margin-bottom: 32px;">
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)" style="margin-bottom: 16px;">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Commander's Dashboard</h3>
+      <p>A new top-level nav tab — strategic overview without touching the map. Four zones:</p>
+      <ul style="margin-top:8px;padding-left:16px;line-height:1.8">
+        <li><strong>Faction Strength Bar</strong> — live BLUFOR vs REDFOR asset count, broken down by asset class. Shifts in real time as assets are destroyed.</li>
+        <li><strong>Mission Stats</strong> — cards showing missions en route / completed / aborted, kill/loss ratio prominently displayed.</li>
+        <li><strong>ROE Summary</strong> — total OPA decisions this session, ALLOWED vs DENIED split, most-fired policy rule.</li>
+        <li><strong>Live Event Feed</strong> — last 10 significant events, same data as the timeline drawer but surfaced here without needing the map open.</li>
+      </ul>
+      <p style="margin-top:10px">All data already flows through <code>useSimulation</code> — zero new backend work. Purely a new frontend view.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">New nav tab · stat cards · faction bar · event feed · frontend only</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sigint" onclick="toggleSelect(this)" style="margin-bottom: 16px;">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>SIGINT / Comms Intelligence Feed</h3>
+      <p>Surfaces the <code>comms_intelligence</code> Kafka topic in the UI for the first time — Layer 1 of the ingestion architecture becomes visible to the operator.</p>
+      <ul style="margin-top:8px;padding-left:16px;line-height:1.8">
+        <li><strong>Signal Intercept Stream</strong> — live panel showing frequency/type (VHF, UHF, satellite), signal strength, confidence score, and geolocation estimate with margin of error.</li>
+        <li><strong>Correlation Badges</strong> — intercepts geolocating within 30km of a known REDFOR asset get flagged with that asset's ID.</li>
+        <li><strong>Map Pulse Rings</strong> — animated radar-ping rings at intercept locations on the map, distinct from asset markers.</li>
+      </ul>
+      <p style="margin-top:10px">Requires a new WebSocket endpoint on the backend to stream <code>comms_intelligence</code> events, plus a <code>useSignalIntelligence</code> hook on the frontend. Most technically involved of the three.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Collapsible panel · new WS endpoint · Kafka Layer 1 · map pulse rings</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="alerts" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Alert &amp; Notification Center</h3>
+      <p>OpenMaven is currently completely silent — nothing announces itself. This adds two layers of awareness:</p>
+      <ul style="margin-top:8px;padding-left:16px;line-height:1.8">
+        <li><strong>Toast Banners</strong> — transient notifications (4s fade) in the top-right, color-coded by severity:
+          <span style="color:#ef4444"> ■ Red</span> = asset lost,
+          <span style="color:#f59e0b"> ■ Amber</span> = ROE denial / aborted,
+          <span style="color:#22c55e"> ■ Green</span> = mission success,
+          <span style="color:#3b82f6"> ■ Blue</span> = new contact. Clicking zooms the map to that asset.
+        </li>
+        <li><strong>Notification Tray</strong> — bell icon in the header with a badge count. Opens a drawer with every alert from the session, newest first. Nothing gets missed even if you blink past a toast.</li>
+      </ul>
+      <p style="margin-top:10px">Lowest implementation complexity of the three — frontend only, consumes the existing simulation event stream, zero new backend work. Highest UX impact per line of code.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Toast overlay · bell tray · severity levels · click-to-focus · frontend only</p>
+    </div>
+  </div>
+</div>
+
+<div style="background:rgba(255,255,255,0.04);border:1px solid var(--color-border);border-radius:8px;padding:16px;margin-top:8px">
+  <p style="margin:0;font-size:12px;color:var(--color-muted)">
+    <strong style="color:var(--color-text)">Note:</strong> B and D pair naturally — both are frontend-only and share the "make simulation state visible" theme. C is the most powerful but needs backend work too.
+  </p>
+</div>
+
+<p class="subtitle" style="margin-top:24px">Click your pick(s) above, then confirm in the terminal.</p>

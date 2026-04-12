@@ -1,0 +1,62 @@
+<h2>What UI/UX feature should we build next?</h2>
+<p class="subtitle">Based on the current OpenMaven stack — pick any that interest you. Multi-select enabled.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="replay" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Simulation Replay &amp; Time Scrubber</h3>
+      <p>Scrub backward and forward through battle history. See how the map evolved tick-by-tick. Essential for post-mission debrief and analysis.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">New timeline scrubber bar · snapshot playback · event rewind</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Commander's Dashboard</h3>
+      <p>At-a-glance KPI panel: BLUFOR vs REDFOR asset counts, missions launched, kills/losses, ROE violation alerts. A strategic overview without opening the map.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">New tab in nav · stat cards · live faction comparison</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sigint" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>SIGINT / Comms Intelligence Feed</h3>
+      <p>A live feed panel visualizing the <code>comms_intelligence</code> Kafka topic — intercepts, signal strength, frequency, geolocation. Surfaces the Layer 1 ingestion data in the UI for the first time.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">New sidebar panel · real Kafka data · signal graph</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="alerts" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Alert &amp; Notification Center</h3>
+      <p>Toast banners + a persistent notification tray for significant events: asset destroyed, contact detected, ROE violation flagged, mission complete. Currently all events are silent.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Toast overlay · notification drawer · severity levels</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="roe-audit" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>ROE Policy Audit Log</h3>
+      <p>Dedicated view for OPA policy decisions — a structured log showing every ALLOWED vs DENIED decision with the policy rule, target, and timestamp. Makes the policy engine visible and auditable.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Enhances Decisions view · OPA trace display · filter by outcome</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="threat-rank" onclick="toggleSelect(this)">
+    <div class="letter">F</div>
+    <div class="content">
+      <h3>Prioritized Threat Ranking Panel</h3>
+      <p>A sortable list of all detected REDFOR assets ranked by threat score (kill prob × proximity × asset type). Helps operators triage targets without scanning the whole map.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Sidebar panel · live sort · click-to-focus on map</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px">Select one or more, then tell me in the terminal which direction you want to go.</p>

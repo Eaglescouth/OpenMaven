@@ -75,7 +75,7 @@ export interface DetectionRecord {
 
 export interface DetectionTarget {
   target_id: string;
-  stage: "DELIBERATE" | "DYNAMIC" | "PENDING_PAIRING" | "PAIRED" | "IN_EXECUTION" | "PENDING_BDA" | "COMPLETE";
+  stage: "DYNAMIC" | "PENDING_PAIRING" | "PAIRED" | "IN_EXECUTION" | "COMPLETE";
   created_at: string;
   updated_at: string;
   history?: Array<[string, string]>;

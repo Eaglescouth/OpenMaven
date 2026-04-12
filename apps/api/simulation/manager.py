@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from detection.detection_engine import process_assets
-from detection.models import Asset as DetectionAsset, Detection, Target, TargetStage, TargetingBoard
+from detection.models import Asset, Detection, Target, TargetingBoard, TargetStage
 from detection.targeting_board import auto_triage, create_target
 from simulation.assets import AssetStatus, MovementOrder, Position, SimAsset
 from simulation.events import EventQueue, EventType, Mutation, SimEvent
@@ -27,6 +27,10 @@ from simulation.rules import (
 
 logger = logging.getLogger(__name__)
 
+
+# ── Detection helpers ─────────────────────────────────────────────────────────
+
+
 def _derive_asset_class(asset_type: str) -> str:
     """Map a SimAsset type string to a detection Asset class."""
     t = asset_type.lower()
@@ -37,30 +41,31 @@ def _derive_asset_class(asset_type: str) -> str:
     return "Military"
 
 
-def _serialize_detection(detection: Detection) -> dict[str, Any]:
+def _serialize_detection(d: Detection) -> dict[str, Any]:
     return {
-        "detection_id": str(detection.detection_id),
-        "timestamp": detection.timestamp.isoformat(),
-        "asset_id": detection.asset_id,
-        "asset_type": detection.asset_type,
-        "confidence": detection.confidence,
-        "grid_ref": detection.grid_ref,
-        "lat": detection.lat,
-        "lon": detection.lon,
-        "source_label": detection.source_label,
-        "classification": detection.classification,
+        "detection_id": str(d.detection_id),
+        "timestamp": d.timestamp.isoformat(),
+        "asset_id": d.asset_id,
+        "asset_type": d.asset_type,
+        "confidence": d.confidence,
+        "grid_ref": d.grid_ref,
+        "lat": d.lat,
+        "lon": d.lon,
+        "source_label": d.source_label,
+        "classification": d.classification,
     }
 
 
-def _serialize_target(target: Target) -> dict[str, Any]:
+def _serialize_target(t: Target) -> dict[str, Any]:
     return {
-        "target_id": target.target_id,
-        "stage": target.stage.value,
-        "created_at": target.created_at.isoformat(),
-        "updated_at": target.updated_at.isoformat(),
-        "detection": _serialize_detection(target.detection),
-        "history": [[stage.value, ts.isoformat()] for stage, ts in target.history],
+        "target_id": t.target_id,
+        "detection": _serialize_detection(t.detection),
+        "stage": t.stage.value,
+        "created_at": t.created_at.isoformat(),
+        "updated_at": t.updated_at.isoformat(),
+        "history": [[stage.value, ts.isoformat()] for stage, ts in t.history],
     }
+
 
 # ── Speed control ────────────────────────────────────────────────────────────
 
@@ -107,6 +112,7 @@ class SimulationManager:
         self.dependencies: list[DependencyLink] = []
         self.event_queue: EventQueue = EventQueue()
         self.event_log: list[SimEvent] = []
+
         self.targeting_board: TargetingBoard = TargetingBoard()
         self._rng: random.Random = random.Random()
 
@@ -298,57 +304,6 @@ class SimulationManager:
                 if speed > 0:
                     self.assign_patrol(asset_id)
 
-    def _run_detection_tick(self) -> dict[str, Any]:
-        """Run detection on hostile assets, update the targeting board, and return payload."""
-        red_faction_ids = {
-            fid for fid, faction in self.factions.items() if faction.side == "red"
-        }
-
-        detection_assets: dict[str, DetectionAsset] = {}
-        for sim_asset in self.assets.values():
-            if sim_asset.faction_id not in red_faction_ids:
-                continue
-            if not sim_asset.is_alive():
-                continue
-            detection_assets[sim_asset.asset_id] = DetectionAsset(
-                asset_id=sim_asset.asset_id,
-                asset_type=sim_asset.asset_type,
-                asset_class=_derive_asset_class(sim_asset.asset_type),
-                latitude=sim_asset.position.latitude,
-                longitude=sim_asset.position.longitude,
-                heading_deg=sim_asset.position.heading_deg,
-                speed_kmh=sim_asset.speed_kmh,
-            )
-
-        detections = process_assets(detection_assets, self._rng)
-
-        active_asset_ids = {
-            target.detection.asset_id
-            for target in self.targeting_board.targets.values()
-            if target.stage != TargetStage.COMPLETE
-        }
-
-        new_detections = [
-            detection for detection in detections
-            if detection.asset_id not in active_asset_ids
-        ]
-
-        for detection in new_detections:
-            self.targeting_board = create_target(detection, self.targeting_board)
-
-        self.targeting_board = auto_triage(self.targeting_board)
-
-        return {
-            "board_state": [
-                _serialize_target(target)
-                for target in self.targeting_board.targets.values()
-            ],
-            "new_detections": [
-                _serialize_detection(detection)
-                for detection in new_detections
-            ],
-        }
-
     # ── Tick loop ─────────────────────────────────────────────────────────
 
     async def _tick_loop(self) -> None:
@@ -361,10 +316,12 @@ class SimulationManager:
             interval = self.tick_duration_s / self.speed.value
             await asyncio.sleep(interval)
             diff = self._advance_tick()
-            detection_payload = self._run_detection_tick()
 
             if self._broadcast_fn is not None:
                 await self._broadcast_fn({"type": "diff", "data": diff.model_dump()})
+
+            detection_payload = self._run_detection_tick()
+            if self._broadcast_fn is not None and detection_payload["new_detections"]:
                 await self._broadcast_fn({"type": "detections", "data": detection_payload})
 
     def _advance_tick(self) -> StateDiff:
@@ -520,3 +477,44 @@ class SimulationManager:
                 description=f"{target.callsign} degraded — lost dependency on {destroyed_id}",
                 scheduled_tick=self.tick,
             )
+
+    def _run_detection_tick(self) -> dict[str, Any]:
+        """Run the detection engine against red-force assets and update the targeting board."""
+        # Build Asset objects for alive red-faction assets only
+        red_faction_ids: set[str] = {
+            fid for fid, f in self.factions.items() if f.side == "red"
+        }
+        detection_assets: dict[str, Asset] = {
+            sim.asset_id: Asset(
+                asset_id=sim.asset_id,
+                asset_type=sim.asset_type,
+                asset_class=_derive_asset_class(sim.asset_type),
+                latitude=sim.position.latitude,
+                longitude=sim.position.longitude,
+                heading_deg=sim.position.heading_deg,
+                speed_kmh=sim.speed_kmh,
+            )
+            for sim in self.assets.values()
+            if sim.faction_id in red_faction_ids and sim.is_alive()
+        }
+
+        # Roll detections
+        detections: list[Detection] = process_assets(detection_assets, self._rng)
+
+        # Skip assets that already have an active (non-COMPLETE) target on the board
+        active_asset_ids: set[str] = {
+            t.detection.asset_id
+            for t in self.targeting_board.targets.values()
+            if t.stage != TargetStage.COMPLETE
+        }
+        new_detections = [d for d in detections if d.asset_id not in active_asset_ids]
+
+        # Create new targets and auto-triage
+        for detection in new_detections:
+            self.targeting_board = create_target(detection, self.targeting_board)
+        self.targeting_board = auto_triage(self.targeting_board)
+
+        return {
+            "board_state": [_serialize_target(t) for t in self.targeting_board.targets.values()],
+            "new_detections": [_serialize_detection(d) for d in new_detections],
+        }

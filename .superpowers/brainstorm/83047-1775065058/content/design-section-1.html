@@ -1,0 +1,79 @@
+<h2>Design — Section 1: Map Overlays</h2>
+<p class="subtitle">New hooks added to <code>lib/map/</code> following existing patterns</p>
+
+<div class="section">
+  <h3>useMapHeatmap</h3>
+  <p>Adds a MapLibre heatmap layer using red-force asset positions. Derived purely from the <code>assets</code> prop — no new data model. Registered as a togglable layer in the existing <code>MapLayerContext</code> ("Threat Heatmap"). The hook watches for style changes (same pattern as <code>useMapSensorCircles</code>) and redraws on every sim tick.</p>
+
+  <div style="background:#0d1117;border:1px solid #2a2f3a;border-radius:4px;padding:12px;margin-top:10px;">
+    <div style="font-size:10px;color:#888;margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase">Heatmap layer config</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <div style="flex:1;font-size:10px;color:#7ab8f5;font-family:monospace;line-height:1.6;">
+        type: "heatmap"<br>
+        source: red-force positions<br>
+        weight: health_pct (0–1)<br>
+        radius: 40px<br>
+        intensity: asset density<br>
+        color: green → yellow → red
+      </div>
+      <div style="flex:1;background:#1a1f2a;border-radius:4px;padding:8px;text-align:center;">
+        <div style="width:100%;height:60px;background:radial-gradient(circle at 30% 40%, rgba(255,0,0,0.6) 0%, rgba(255,165,0,0.3) 40%, transparent 70%), radial-gradient(circle at 70% 60%, rgba(255,0,0,0.4) 0%, rgba(255,165,0,0.2) 35%, transparent 65%);border-radius:3px;"></div>
+        <div style="font-size:9px;color:#666;margin-top:4px">red-force density preview</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>useMapZoneControl</h3>
+  <p>Computes per-tick Voronoi regions from all alive asset positions (blue + red), then renders filled GeoJSON polygons clipped to the map bounds. Blue zones: <code>rgba(74,144,226,0.12)</code>, Red zones: <code>rgba(224,92,92,0.12)</code>. Contested cells (assets of both factions within 30km) rendered in amber. Recomputed client-side using a lightweight Voronoi library — no server round-trip.</p>
+
+  <div style="background:#0d1117;border:1px solid #2a2f3a;border-radius:4px;padding:12px;margin-top:10px;display:flex;gap:12px;align-items:center;">
+    <div style="flex:1;">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:14px;background:rgba(74,144,226,0.35);border:1px solid rgba(74,144,226,0.6);border-radius:2px"></div><span style="font-size:10px;color:#888">Blue controlled</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:14px;background:rgba(224,92,92,0.35);border:1px solid rgba(224,92,92,0.6);border-radius:2px"></div><span style="font-size:10px;color:#888">Red controlled</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:14px;background:rgba(245,166,35,0.35);border:1px solid rgba(245,166,35,0.6);border-radius:2px"></div><span style="font-size:10px;color:#888">Contested</span></div>
+      </div>
+    </div>
+    <div style="flex:1;background:#1a1f2a;border-radius:4px;padding:8px;font-size:9px;color:#666;text-align:center;">
+      Togglable via existing layer controls<br>z-index: below markers, above base tiles
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Mini-Map (Pop-out Panel)</h3>
+  <p>A "MINIMAP" button added to the map toolbar. Click opens a floating <code>MapViewInner</code> instance at 260×180px, positioned top-right, showing all assets at reduced scale. Non-interactive (no click/context menu). Shares the same <code>assets</code> and <code>visibleLayers</code> props as the main map. Closes on button re-click or ESC. Implemented as a React component, not a new hook — it's a second map instance, not a MapLibre layer.</p>
+</div>
+
+<div class="section">
+  <h3>Event Timeline Drawer</h3>
+  <p>A collapsible drawer attached to the bottom of the map viewport. A thin handle bar is always visible (showing event count badge). Click expands to ~200px showing a chronological list of sim events: strikes launched, assets destroyed, missions aborted, counterattacks triggered. Events sourced from the existing <code>strikeLog</code> and sim state in <code>use-simulation.ts</code>. No new server data needed. Each entry clickable to pan/select the relevant asset on the map.</p>
+
+  <div style="background:#0d1117;border:1px solid #2a2f3a;border-radius:4px;overflow:hidden;margin-top:10px;">
+    <div style="padding:4px 12px;background:#111621;border-bottom:1px solid #2a2f3a;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:9px;color:#888;letter-spacing:0.1em;text-transform:uppercase">Event Timeline</span>
+      <span style="font-size:9px;padding:1px 6px;background:rgba(74,144,226,0.15);border:1px solid rgba(74,144,226,0.3);border-radius:10px;color:#7ab8f5">12 events</span>
+    </div>
+    <div style="padding:6px 0;">
+      <div style="padding:4px 12px;border-bottom:1px solid #1a1f2a;display:flex;gap:8px;align-items:center;">
+        <span style="font-size:9px;color:#e05c5c">💥</span>
+        <span style="font-size:10px;color:#ccc;flex:1">ALPHA-7 destroyed by Iskander-M</span>
+        <span style="font-size:9px;color:#555">t·1482</span>
+      </div>
+      <div style="padding:4px 12px;border-bottom:1px solid #1a1f2a;display:flex;gap:8px;align-items:center;">
+        <span style="font-size:9px;color:#2ea043">✓</span>
+        <span style="font-size:10px;color:#ccc;flex:1">Strike mission complete — T-90M #3</span>
+        <span style="font-size:9px;color:#555">t·1480</span>
+      </div>
+      <div style="padding:4px 12px;display:flex;gap:8px;align-items:center;opacity:0.6">
+        <span style="font-size:9px;color:#f5a623">⚠</span>
+        <span style="font-size:10px;color:#ccc;flex:1">Counterattack detected — sector 4</span>
+        <span style="font-size:9px;color:#555">t·1475</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;font-size:11px;color:#888">Does this look right so far? Any changes before we move to Section 2 (Mission Planning)?</p>

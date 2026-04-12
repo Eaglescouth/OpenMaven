@@ -1,0 +1,40 @@
+<h2>Feature C — SIGINT / Comms Intelligence Feed</h2>
+<p class="subtitle">Question 2 of 4: Where does the SIGINT UI live?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>New dedicated page — <code>/sigint</code></h3>
+      <p>A full tab in the nav (like Overview and Map). Left panel: live intercept feed. Right panel: map with pulse rings showing intercept locations. Same pattern as the Overview page — <code>useSimulation()</code> called fresh, <code>SimulationControls</code> at the top.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Full screen real estate for the feed</li><li>Follows the established page pattern exactly</li><li>Map rings visible without leaving SIGINT view</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Another WebSocket connection (one per page)</li><li>Can't see SIGINT rings on the main map page</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Drawer / panel on the existing Map page</h3>
+      <p>A collapsible side panel on <code>/map</code> (like the Event Timeline Drawer already there). SIGINT feed slides in from the right. Pulse rings always render on the main tactical map.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Pulse rings visible alongside tactical picture</li><li>Single WebSocket connection</li><li>Follows the drawer pattern (EventTimelineDrawer)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Map page is already crowded</li><li>Less room for intercept feed details</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Split — dedicated page <em>plus</em> pulse rings on Map</h3>
+      <p>A new <code>/sigint</code> tab for the full feed. Pulse rings also render on <code>/map</code> (toggled like sensor ranges). SIGINT data lives in a shared context so both pages consume it without duplicate WebSocket connections.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Best of both — full feed page + tactical map integration</li><li>Single shared data source via context</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Most work — new context, new page, new map hook</li><li>Context adds complexity to app shell</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

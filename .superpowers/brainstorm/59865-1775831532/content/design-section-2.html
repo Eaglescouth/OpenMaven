@@ -1,0 +1,104 @@
+<h2>Design — Section 2: Mission Planning</h2>
+<p class="subtitle">D2: Mission Queue Panel &amp; D3: Waypoint Route Editor — following the existing hook-per-feature pattern</p>
+
+<!-- ─── D2 ──────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <h3>D2 — Mission Queue Panel</h3>
+  <p>A collapsible panel on the right edge of the map (above the strike log panel). Shows all <strong>queued and in-flight</strong> missions in order. Implemented as a pure React component — no new hook needed, it reads directly from <code>sim.activeMissions</code> and a new <code>sim.missionQueue</code> field that the backend already tracks.</p>
+
+  <div style="display:flex;gap:12px;margin-top:12px;">
+    <div style="flex:1;">
+      <div style="background:#0d1117;border:1px solid #2a2f3a;border-radius:4px;overflow:hidden;">
+        <div style="padding:5px 10px;border-bottom:1px solid #2a2f3a;font-size:9px;color:#888;letter-spacing:0.1em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;">
+          <span>Mission Queue</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:9px;padding:1px 5px;background:rgba(74,144,226,0.15);border:1px solid rgba(74,144,226,0.3);border-radius:10px;color:#7ab8f5">2 active</span>
+            <span style="font-size:9px;padding:1px 5px;background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:10px;color:#f5a623">1 queued</span>
+          </div>
+        </div>
+        <div style="padding:7px 10px;border-bottom:1px solid #1a1f2a;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:10px;color:#f0f0f0;font-weight:600">ALPHA-1 → T-90M #3</span>
+            <span style="font-size:8px;padding:1px 5px;background:rgba(74,144,226,0.2);border:1px solid rgba(74,144,226,0.4);border-radius:2px;color:#7ab8f5">IN FLIGHT</span>
+          </div>
+          <div style="display:flex;gap:8px;font-size:9px;color:#666;">
+            <span>Hellfire · 42km</span>
+            <span>ETA ~12 ticks</span>
+          </div>
+          <div style="margin-top:5px;height:3px;background:#1a1f2a;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:35%;background:linear-gradient(90deg,#1a4a8a,#4a90e2);border-radius:2px;"></div>
+          </div>
+        </div>
+        <div style="padding:7px 10px;border-bottom:1px solid #1a1f2a;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:10px;color:#f0f0f0;font-weight:600">BRAVO-2 → Su-35 #1</span>
+            <span style="font-size:8px;padding:1px 5px;background:rgba(74,144,226,0.2);border:1px solid rgba(74,144,226,0.4);border-radius:2px;color:#7ab8f5">IN FLIGHT</span>
+          </div>
+          <div style="display:flex;gap:8px;font-size:9px;color:#666;">
+            <span>AIM-120 · 78km</span>
+            <span>ETA ~28 ticks</span>
+          </div>
+          <div style="margin-top:5px;height:3px;background:#1a1f2a;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:12%;background:linear-gradient(90deg,#1a4a8a,#4a90e2);border-radius:2px;"></div>
+          </div>
+        </div>
+        <div style="padding:7px 10px;opacity:0.65;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:10px;color:#f0f0f0;font-weight:600">CHARLIE-5 → BMP-3 #2</span>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span style="font-size:8px;padding:1px 5px;background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.35);border-radius:2px;color:#f5a623">QUEUED</span>
+              <button style="font-size:8px;color:#666;background:none;border:none;cursor:pointer;padding:0 2px;" title="Cancel">✕</button>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#555;">Maverick · waiting for shooter</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:9px;color:#555;text-align:center;">Collapse handle (always visible)</div>
+    </div>
+    <div style="flex:1;font-size:10px;color:#888;line-height:1.7;">
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Position:</span> absolute right-4, above strike log</div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Data source:</span> <code>sim.activeMissions</code> (already exists)</div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Progress bar:</span> derived from mission distance traveled vs initial dist</div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Cancel button:</span> calls existing <code>sim.abortMission()</code></div>
+      <div><span style="color:#7ab8f5;font-weight:600">New component:</span> <code>mission-queue-panel.tsx</code></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── D3 ──────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <h3>D3 — Waypoint Route Editor</h3>
+  <p>A new <strong>waypoint mode</strong> (alongside existing move mode). Activate via right-click context menu on a friendly asset: "Set Patrol Route". Click the map to place up to 5 waypoints — each rendered as a numbered dot connected by dashed blue lines. Confirm sends a sequence of move orders to the backend. Routes are stored in frontend state only (no new backend endpoint needed — we reuse the existing <code>/simulation/move</code> API sequentially).</p>
+
+  <div style="display:flex;gap:12px;margin-top:12px;">
+    <div style="flex:1;background:#0d1117;border:1px solid #2a2f3a;border-radius:4px;padding:12px;">
+      <div style="font-size:9px;color:#888;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">Waypoint mode indicator</div>
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(45,114,210,0.12);border:1px solid rgba(45,114,210,0.4);border-radius:3px;">
+        <span style="font-size:10px;color:#7ab8f5;font-weight:600">WAYPOINT MODE</span>
+        <span style="font-size:9px;color:#555">·</span>
+        <span style="font-size:9px;color:#888">ALPHA-1 · 2 / 5 points</span>
+        <button style="font-size:9px;padding:1px 6px;background:rgba(45,114,210,0.2);border:1px solid rgba(45,114,210,0.4);border-radius:2px;color:#7ab8f5;cursor:pointer;">Confirm</button>
+        <button style="font-size:9px;color:#666;background:none;border:none;cursor:pointer;">Cancel</button>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:0;">
+        <div style="width:12px;height:12px;border-radius:50%;background:#4a90e2;border:2px solid #7ab8f5;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:700;flex-shrink:0;">S</div>
+        <div style="flex:1;border-top:1px dashed rgba(74,144,226,0.5);"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#1a2a3a;border:2px solid #4a90e2;display:flex;align-items:center;justify-content:center;font-size:7px;color:#7ab8f5;font-weight:700;flex-shrink:0;">1</div>
+        <div style="flex:1;border-top:1px dashed rgba(74,144,226,0.5);"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#1a2a3a;border:2px solid #4a90e2;display:flex;align-items:center;justify-content:center;font-size:7px;color:#7ab8f5;font-weight:700;flex-shrink:0;">2</div>
+        <div style="flex:1;border-top:1px dashed rgba(74,144,226,0.38);opacity:0.4;"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#111;border:2px dashed #2a3a4a;flex-shrink:0;"></div>
+      </div>
+      <div style="margin-top:6px;font-size:9px;color:#444;text-align:center;">asset → wp1 → wp2 → (click to add more)</div>
+    </div>
+    <div style="flex:1;font-size:10px;color:#888;line-height:1.7;">
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Max waypoints:</span> 5 (keeps complexity bounded)</div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Backend:</span> reuses <code>/simulation/move</code> sequentially — no new endpoint</div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">Map rendering:</span> new <code>useMapWaypoints</code> hook in <code>lib/map/</code></div>
+      <div style="margin-bottom:8px;"><span style="color:#7ab8f5;font-weight:600">State:</span> new <code>useMapWaypointMode</code> hook in <code>lib/</code> (mirrors <code>use-map-move.ts</code>)</div>
+      <div><span style="color:#7ab8f5;font-weight:600">Entry point:</span> "Set Patrol Route" added to existing context menu</div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;font-size:11px;color:#888;">Does this look right? Approve and we'll write the full design doc.</p>

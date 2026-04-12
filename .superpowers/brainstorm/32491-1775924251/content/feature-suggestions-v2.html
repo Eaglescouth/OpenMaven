@@ -1,0 +1,62 @@
+<h2>What UI/UX feature should we build next?</h2>
+<p class="subtitle">Select one or more that interest you. Multi-select enabled.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="replay" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Simulation Replay &amp; Time Scrubber</h3>
+      <p>Scrub backward/forward through battle history tick-by-tick. Snapshots asset positions at every N ticks. Pause live sim, rewind to before a strike, watch the kill chain frame-by-frame. Builds on the existing event timeline and <code>useSimulation</code> hook.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Scrubber bar on map · snapshot cache · post-mission debrief</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Commander's Dashboard</h3>
+      <p>New top-level tab — strategic overview without the map. Live BLUFOR vs REDFOR asset counts, missions launched/completed/aborted, kill/loss ratios, last 5 significant events, and ROE violation counts. All data already flows through <code>useSimulation</code>, so this is mostly a new view layer.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">New nav tab · stat cards · faction bar chart · event feed</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sigint" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>SIGINT / Comms Intelligence Feed</h3>
+      <p>Surfaces the <code>comms_intelligence</code> Kafka topic in the UI for the first time. Live intercept stream: signal frequency, strength, geolocation estimate, confidence score. Intercepts near known REDFOR assets get a correlation badge. Map shows pulse rings at intercept locations.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Collapsible sidebar · Kafka Layer 1 data · map pulse rings</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="alerts" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Alert &amp; Notification Center</h3>
+      <p>Currently all events are silent. Adds: (1) color-coded toast banners for high-priority events (red = asset lost, amber = ROE violation, green = mission success), and (2) a persistent notification tray (bell icon) so nothing gets missed. Clicking an alert zooms the map to the relevant asset.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Toast overlay · bell tray · severity levels · click-to-focus</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="roe-audit" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>ROE Policy Audit Log</h3>
+      <p>Every OPA policy evaluation — ALLOWED or DENIED — logged with rule name, target, requesting unit, and timestamp. Filter by outcome, rule, or time range. Each entry expands to show the full Rego trace. Makes the policy engine transparent and auditable — core to OpenMaven's purpose.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Enhances Decisions tab · OPA trace · filter by rule/outcome</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="threat-rank" onclick="toggleSelect(this)">
+    <div class="letter">F</div>
+    <div class="content">
+      <h3>Prioritized Threat Ranking Panel</h3>
+      <p>Sortable panel ranking all REDFOR assets by threat score: <code>kill_prob × proximity_weight × asset_class_multiplier</code>. Updates every tick. Clicking a row zooms the map and auto-populates the strike pairing panel. Closes a real workflow gap — right now target selection is entirely manual map scanning.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--color-muted)">Collapsible panel · live sort · click-to-strike integration</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px">Click to select, then tell me your picks in the terminal.</p>
